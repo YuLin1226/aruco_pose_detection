@@ -1,0 +1,48 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://ros.org/wiki/xacro" name="aruco_box">
+  
+  <!-- Parameters -->
+  <xacro:arg name="aruco_material" default="Gazebo/Case1Single"/>
+  
+  <!-- Box properties -->
+  <xacro:property name="box_size" value="1.0"/>
+  <xacro:property name="box_mass" value="1.0"/>
+  
+  <!-- Base link representing the box with ArUco marker -->
+  <link name="base_link">
+    <visual>
+      <origin xyz="0 0 ${box_size/2}" rpy="0 0 0"/>
+      <geometry>
+        <box size="${box_size} ${box_size} ${box_size}"/>
+      </geometry>
+      <material name="white">
+        <color rgba="1.0 1.0 1.0 1.0"/>
+      </material>
+    </visual>
+    
+    <collision>
+      <origin xyz="0 0 ${box_size/2}" rpy="0 0 0"/>
+      <geometry>
+        <box size="${box_size} ${box_size} ${box_size}"/>
+      </geometry>
+    </collision>
+    
+    <inertial>
+      <origin xyz="0 0 ${box_size/2}" rpy="0 0 0"/>
+      <mass value="${box_mass}"/>
+      <inertia ixx="${box_mass*(box_size*box_size + box_size*box_size)/12}" 
+               ixy="0.0" ixz="0.0"
+               iyy="${box_mass*(box_size*box_size + box_size*box_size)/12}" 
+               iyz="0.0"
+               izz="${box_mass*(box_size*box_size + box_size*box_size)/12}"/>
+    </inertial>
+  </link>
+
+  <!-- Gazebo material and physics properties -->
+  <gazebo reference="base_link">
+    <!-- Use the selected ArUco material -->
+    <material>$(arg aruco_material)</material>
+    <static>true</static>
+  </gazebo>
+
+</robot>

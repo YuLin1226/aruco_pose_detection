@@ -1,0 +1,40 @@
+Combined ArUco Marker Information
+========================================
+Dictionary: 6x6_250
+Generated Cases: 6
+Border Size: 20 pixels
+Single Marker Size: 512x512 pixels
+
+Generated Files:
+--------------------
+case1_single.png
+  - 使用1個ArUco標記
+  - 佈局: 1x1
+  - 標記IDs: [0]
+
+case2a_horizontal.png
+  - 使用2個ArUco標記 (左右放置)
+  - 佈局: 1x2
+  - 標記IDs: [0, 1]
+
+case2b_diagonal.png
+  - 使用2個ArUco標記 (斜對角放置，左上與右下)
+  - 佈局: 2x2
+  - 標記IDs: [0, 255, 255, 1]
+
+case3_quad.png
+  - 使用4個ArUco標記 (四宮格)
+  - 佈局: 2x2
+  - 標記IDs: [0, 1, 2, 3]
+
+case4_two_rows.png
+  - 使用6個ArUco標記 (分成上下兩列，一列各3個)
+  - 佈局: 2x3
+  - 標記IDs: [0, 1, 2, 3, 4, 5]
+
+case5_nine_grid.png
+  - 使用9個ArUco標記 (九宮格形式)
+  - 佈局: 3x3
+  - 標記IDs: [0, 1, 2, 3, 4, 5, 6, 7, 8]
+
+Generated at: /home/ryanchen/aruco_ws/src/aruco_pose_detection/scripts/combined_markers/

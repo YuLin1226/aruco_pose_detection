@@ -1,0 +1,16 @@
+ArUco Marker Information
+==============================
+Dictionary: 6x6_250
+Image Size: 512x512 pixels
+Generated Markers: 6
+Marker IDs: [0, 1, 2, 3, 4, 5]
+
+File List:
+  - marker_0.png (ID: 0)
+  - marker_1.png (ID: 1)
+  - marker_2.png (ID: 2)
+  - marker_3.png (ID: 3)
+  - marker_4.png (ID: 4)
+  - marker_5.png (ID: 5)
+
+Generated at: /home/ryanchen/aruco_ws/markers/

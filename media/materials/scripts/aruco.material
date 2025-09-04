@@ -1,0 +1,98 @@
+// ArUco Marker Materials for Gazebo
+// These materials will be used to display different ArUco markers on the box
+
+material ArUco/Case1Single
+{
+    technique
+    {
+        pass
+        {
+            texture_unit
+            {
+                texture case1_single.png
+                filtering bilinear
+                scale 1.0 1.0
+            }
+        }
+    }
+}
+
+material ArUco/Case2aHorizontal
+{
+    technique
+    {
+        pass
+        {
+            texture_unit
+            {
+                texture case2a_horizontal.png
+                filtering bilinear
+                scale 1.0 1.0
+            }
+        }
+    }
+}
+
+material ArUco/Case2bDiagonal
+{
+    technique
+    {
+        pass
+        {
+            texture_unit
+            {
+                texture case2b_diagonal.png
+                filtering bilinear
+                scale 1.0 1.0
+            }
+        }
+    }
+}
+
+material ArUco/Case3Quad
+{
+    technique
+    {
+        pass
+        {
+            texture_unit
+            {
+                texture case3_quad.png
+                filtering bilinear
+                scale 1.0 1.0
+            }
+        }
+    }
+}
+
+material ArUco/Case4TwoRows
+{
+    technique
+    {
+        pass
+        {
+            texture_unit
+            {
+                texture case4_two_rows.png
+                filtering bilinear
+                scale 1.0 1.0
+            }
+        }
+    }
+}
+
+material ArUco/Case5NineGrid
+{
+    technique
+    {
+        pass
+        {
+            texture_unit
+            {
+                texture case5_nine_grid.png
+                filtering bilinear
+                scale 1.0 1.0
+            }
+        }
+    }
+}
