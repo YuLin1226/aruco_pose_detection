@@ -158,8 +158,8 @@ class CompleteArucoProcessor:
         
         try:
             # 生成標記
-            marker_0 = self.generate_single_marker(dictionary_type, 0)
-            marker_1 = self.generate_single_marker(dictionary_type, 1)
+            marker_0 = self.generate_single_marker(dictionary_type, 23)
+            marker_1 = self.generate_single_marker(dictionary_type, 24)
             
             if marker_0 is None or marker_1 is None:
                 return None, (0, 0)
@@ -203,8 +203,8 @@ class CompleteArucoProcessor:
         
         try:
             # 生成標記
-            marker_0 = self.generate_single_marker(dictionary_type, 0)
-            marker_1 = self.generate_single_marker(dictionary_type, 1)
+            marker_0 = self.generate_single_marker(dictionary_type, 21)
+            marker_1 = self.generate_single_marker(dictionary_type, 22)
             
             if marker_0 is None or marker_1 is None:
                 return None, (0, 0)
@@ -253,7 +253,7 @@ class CompleteArucoProcessor:
         try:
             # 生成6個標記 (ID 0-5)
             markers = []
-            for i in range(6):
+            for i in [41,42,43,44,45,46]:
                 marker = self.generate_single_marker(dictionary_type, i)
                 if marker is None:
                     return None, (0, 0)
@@ -314,14 +314,14 @@ def get_layout_configs():
             'type': '單標記',
             'rows': 1,
             'cols': 1,
-            'ids': [0],
+            'ids': [1],
             'description': '使用1個ArUco標記'
         },
         'case2a_horizontal': {
             'type': '水平雙標記 (2x2總大小置中)',
             'rows': 1,
             'cols': 2,
-            'ids': [0, 1],
+            'ids': [21, 22],
             'description': '使用2個ArUco標記 (水平置中放置，與case2b相同總大小)',
             'special': 'centered_horizontal_2x2'  # 標記需要特殊處理
         },
@@ -329,7 +329,7 @@ def get_layout_configs():
             'type': '對角雙標記',
             'rows': 2,
             'cols': 2,
-            'ids': [0, 255, 255, 1],  # 255表示空白位置，但會用特殊函數處理
+            'ids': [23, 255, 255, 24],  # 255表示空白位置，但會用特殊函數處理
             'description': '使用2個ArUco標記 (斜對角放置，左上與右下)',
             'special': 'diagonal'  # 標記需要特殊處理
         },
@@ -337,14 +337,14 @@ def get_layout_configs():
             'type': '四宮格',
             'rows': 2,
             'cols': 2,
-            'ids': [0, 1, 2, 3],
+            'ids': [31, 32, 33, 34],
             'description': '使用4個ArUco標記 (四宮格)'
         },
         'case4_two_rows': {
             'type': '雙列三標記 (3x3總大小置中)',
             'rows': 2,
             'cols': 3,
-            'ids': [0, 1, 2, 3, 4, 5],
+            'ids': [41, 42, 43, 44, 45, 46],
             'description': '使用6個ArUco標記 (分成上下兩列置中，與case5相同總大小)',
             'special': 'centered_2rows_3x3'  # 標記需要特殊處理
         },
@@ -352,7 +352,7 @@ def get_layout_configs():
             'type': '九宮格',
             'rows': 3,
             'cols': 3,
-            'ids': [0, 1, 2, 3, 4, 5, 6, 7, 8],
+            'ids': [51, 52, 53, 54, 55, 56, 57, 58, 59],
             'description': '使用9個ArUco標記 (九宮格形式)'
         }
     }
