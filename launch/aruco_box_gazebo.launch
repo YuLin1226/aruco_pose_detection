@@ -13,12 +13,21 @@
   <arg name="aruco_x" default="0.0"/>
   <arg name="aruco_y" default="0.0"/>
   <arg name="aruco_z" default="0.0"/>
+
+  <!-- Spawn position for Obstacle box -->
+  <arg name="obs1_x" default="0.0"/>
+  <arg name="obs1_y" default="1.0"/>
+  <arg name="obs1_z" default="0.0"/>
+  <arg name="obs2_x" default="0.0"/>
+  <arg name="obs2_y" default="-1.0"/>
+  <arg name="obs2_z" default="0.0"/>
   
   <!-- Spawn position for camera robot -->
   <arg name="camera_x" default="2.0"/>
-  <arg name="camera_y" default="0.0"/>
+  <arg name="camera_y" default="1.0"/>
   <arg name="camera_z" default="0.5"/>
-  <arg name="camera_yaw" default="3.1415926"/>
+  <!-- <arg name="camera_yaw" default="3.1415926"/> -->
+  <arg name="camera_yaw" default="3.7415926"/>
   
   
   <!-- Set use_sim_time -->
@@ -91,6 +100,16 @@
         args="-urdf -model aruco_box -param aruco_robot_description 
               -x $(arg aruco_x) -y $(arg aruco_y) -z $(arg aruco_z)"/>
   
+  <!-- Spawn the obstacle boxes -->
+  <param name="obstacle_description" 
+           command="$(find xacro)/xacro $(find aruco_pose_detection)/urdf/obstacle_box.urdf.xacro"/>
+  <node name="spawn_obstacle_box_1" pkg="gazebo_ros" type="spawn_model" output="screen"
+        args="-urdf -model obstacle_box_1 -param obstacle_description 
+              -x $(arg obs1_x) -y $(arg obs1_y) -z $(arg obs1_z)"/>
+  <node name="spawn_obstacle_box_2" pkg="gazebo_ros" type="spawn_model" output="screen"
+        args="-urdf -model obstacle_box_2 -param obstacle_description 
+              -x $(arg obs2_x) -y $(arg obs2_y) -z $(arg obs2_z)"/>
+
   <!-- Spawn the camera robot -->
   <node name="spawn_camera_robot" pkg="gazebo_ros" type="spawn_model" output="screen"
         args="-urdf -model camera_robot -param camera_robot_description 
