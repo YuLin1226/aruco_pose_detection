@@ -7,6 +7,10 @@
 #include <cv_bridge/cv_bridge.h>
 #include <opencv2/opencv.hpp>
 #include <opencv2/aruco.hpp>
+#include <tf2_ros/transform_listener.h>
+#include <tf2_ros/buffer.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
+#include <geometry_msgs/PoseStamped.h>
 
 
 
@@ -40,6 +44,9 @@ private:
     cv::Ptr<cv::aruco::Dictionary> aruco_dictionary_;
     cv::Ptr<cv::aruco::DetectorParameters> detector_params_;
     
+    // TF 相關成員
+    tf2_ros::Buffer tf_buffer_;
+    tf2_ros::TransformListener tf_listener_;
 
 
     /**
@@ -63,6 +70,23 @@ private:
      * @brief 處理接收到的影像（後續實作）
      */
     void processImage();
+    
+    /**
+     * @brief 獲取從相機光學座標系到cam_base_link的變換
+     * @param transform 輸出的變換
+     * @return 是否成功獲取變換
+     */
+    bool getTransformFromOpticalToBase(geometry_msgs::TransformStamped& transform);
+    
+    /**
+     * @brief 將姿態從相機光學座標系變換到cam_base_link座標系
+     * @param rvec 旋轉向量
+     * @param tvec 平移向量
+     * @param transformed_pose 變換後的姿態
+     * @return 是否成功變換
+     */
+    bool transformPose(const cv::Vec3d& rvec, const cv::Vec3d& tvec, 
+                      geometry_msgs::PoseStamped& transformed_pose);
 };
 
 #endif // ARUCO_DETECTION_MANAGER_H

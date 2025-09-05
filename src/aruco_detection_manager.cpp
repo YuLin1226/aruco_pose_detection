@@ -1,7 +1,7 @@
 #include "aruco_detection_manager.h"
 
 ArUcoDetectionManager::ArUcoDetectionManager(ros::NodeHandle& nh)
-    : nh_(nh), camera_info_received_(false), image_captured_(false)
+    : nh_(nh), camera_info_received_(false), image_captured_(false), tf_listener_(tf_buffer_)
 {
     ROS_INFO("Initializing ArUco Detection Manager...");
     
@@ -166,18 +166,37 @@ void ArUcoDetectionManager::processImage()
                                                camera_matrix, distortion_coeffs,
                                                rvecs, tvecs);
             
-            // 6. 輸出檢測結果
+            // 6. 輸出檢測結果並進行座標變換
             for (size_t i = 0; i < marker_ids.size(); ++i)
             {
                 ROS_INFO("Marker ID: %d", marker_ids[i]);
-                ROS_INFO("  Position (x,y,z): (%.3f, %.3f, %.3f)", 
+                ROS_INFO("  Camera optical frame - Position (x,y,z): (%.3f, %.3f, %.3f)", 
                          tvecs[i][0], tvecs[i][1], tvecs[i][2]);
-                ROS_INFO("  Rotation (rx,ry,rz): (%.3f, %.3f, %.3f)", 
+                ROS_INFO("  Camera optical frame - Rotation (rx,ry,rz): (%.3f, %.3f, %.3f)", 
                          rvecs[i][0], rvecs[i][1], rvecs[i][2]);
                 
                 // 計算距離
                 double distance = cv::norm(tvecs[i]);
                 ROS_INFO("  Distance: %.3f meters", distance);
+                
+                // 將姿態變換到 cam_base_link 座標系
+                geometry_msgs::PoseStamped transformed_pose;
+                if (transformPose(rvecs[i], tvecs[i], transformed_pose))
+                {
+                    ROS_INFO("  Cam base link frame - Position (x,y,z): (%.3f, %.3f, %.3f)",
+                             transformed_pose.pose.position.x,
+                             transformed_pose.pose.position.y,
+                             transformed_pose.pose.position.z);
+                    ROS_INFO("  Cam base link frame - Orientation (x,y,z,w): (%.3f, %.3f, %.3f, %.3f)",
+                             transformed_pose.pose.orientation.x,
+                             transformed_pose.pose.orientation.y,
+                             transformed_pose.pose.orientation.z,
+                             transformed_pose.pose.orientation.w);
+                }
+                else
+                {
+                    ROS_WARN("  Failed to transform pose to cam_base_link frame");
+                }
             }
             
             // 7. 可選：繪製檢測結果
@@ -205,5 +224,71 @@ void ArUcoDetectionManager::processImage()
     catch (const std::exception& e)
     {
         ROS_ERROR("Error during ArUco processing: %s", e.what());
+    }
+}
+
+bool ArUcoDetectionManager::getTransformFromOpticalToBase(geometry_msgs::TransformStamped& transform)
+{
+    try
+    {
+        transform = tf_buffer_.lookupTransform("cam_base_link", "camera_optical_link", 
+                                             ros::Time(0), ros::Duration(3.0));
+        return true;
+    }
+    catch (tf2::TransformException& ex)
+    {
+        ROS_WARN("Could not get transform from camera_optical_link to cam_base_link: %s", ex.what());
+        return false;
+    }
+}
+
+bool ArUcoDetectionManager::transformPose(const cv::Vec3d& rvec, const cv::Vec3d& tvec, 
+                                         geometry_msgs::PoseStamped& transformed_pose)
+{
+    geometry_msgs::TransformStamped transform;
+    if (!getTransformFromOpticalToBase(transform))
+    {
+        return false;
+    }
+    
+    try
+    {
+        // 將 OpenCV 旋轉向量轉換為旋轉矩陣
+        cv::Mat rotation_matrix;
+        cv::Rodrigues(rvec, rotation_matrix);
+        
+        // 轉換為四元數
+        tf2::Matrix3x3 tf_rotation(
+            rotation_matrix.at<double>(0,0), rotation_matrix.at<double>(0,1), rotation_matrix.at<double>(0,2),
+            rotation_matrix.at<double>(1,0), rotation_matrix.at<double>(1,1), rotation_matrix.at<double>(1,2),
+            rotation_matrix.at<double>(2,0), rotation_matrix.at<double>(2,1), rotation_matrix.at<double>(2,2)
+        );
+        
+        tf2::Quaternion tf_quat;
+        tf_rotation.getRotation(tf_quat);
+        
+        // 創建在相機光學座標系中的姿態
+        geometry_msgs::PoseStamped optical_pose;
+        optical_pose.header.frame_id = "camera_optical_link";
+        optical_pose.header.stamp = ros::Time::now();
+        
+        optical_pose.pose.position.x = tvec[0];
+        optical_pose.pose.position.y = tvec[1];
+        optical_pose.pose.position.z = tvec[2];
+        
+        optical_pose.pose.orientation.x = tf_quat.x();
+        optical_pose.pose.orientation.y = tf_quat.y();
+        optical_pose.pose.orientation.z = tf_quat.z();
+        optical_pose.pose.orientation.w = tf_quat.w();
+        
+        // 使用 TF2 進行座標變換
+        tf2::doTransform(optical_pose, transformed_pose, transform);
+        
+        return true;
+    }
+    catch (const std::exception& e)
+    {
+        ROS_ERROR("Error transforming pose: %s", e.what());
+        return false;
     }
 }
