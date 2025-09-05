@@ -1,4 +1,5 @@
 #include "aruco_detection_manager.h"
+#include <string>
 
 ArUcoDetectionManager::ArUcoDetectionManager(ros::NodeHandle& nh)
     : nh_(nh), camera_info_received_(false), image_captured_(false), tf_listener_(tf_buffer_)
@@ -8,6 +9,9 @@ ArUcoDetectionManager::ArUcoDetectionManager(ros::NodeHandle& nh)
     // 初始化 ArUco 檢測器
     initializeArUcoDetector();
     
+    // 獲取目前測試案例
+    initArUcoCaseType();
+
     // 訂閱相機影像 topic (只接收一次)
     image_subscriber_ = nh_.subscribe("/camera/image_raw", 1, 
         &ArUcoDetectionManager::imageCallback, this);
@@ -24,6 +28,34 @@ ArUcoDetectionManager::ArUcoDetectionManager(ros::NodeHandle& nh)
 ArUcoDetectionManager::~ArUcoDetectionManager()
 {
     ROS_INFO("ArUco Detection Manager shutting down...");
+}
+
+void ArUcoDetectionManager::initArUcoCaseType()
+{
+    std::string test_case;
+    nh_.getParam("/aruco_detection_case", test_case);
+    if (test_case.empty()) {
+        test_case = "case1";  // 預設值
+    }
+
+    ROS_INFO("Current TEST CASE: %s", test_case.c_str());
+
+    if (test_case == "case1") {
+        box_config_type_ = ArUcoBoxConfig::BoxConfigType::CASE_1;
+    } else if (test_case == "case2a") {
+        box_config_type_ = ArUcoBoxConfig::BoxConfigType::CASE_2A;
+    } else if (test_case == "case2b") {
+        box_config_type_ = ArUcoBoxConfig::BoxConfigType::CASE_2B;
+    } else if (test_case == "case3") {
+        box_config_type_ = ArUcoBoxConfig::BoxConfigType::CASE_3;
+    } else if (test_case == "case4") {
+        box_config_type_ = ArUcoBoxConfig::BoxConfigType::CASE_4;
+    } else if (test_case == "case5") {
+        box_config_type_ = ArUcoBoxConfig::BoxConfigType::CASE_5;
+    } else {
+        ROS_WARN("Unknown test case: %s, using default case1", test_case.c_str());
+        box_config_type_ = ArUcoBoxConfig::BoxConfigType::CASE_1;
+    }
 }
 
 void ArUcoDetectionManager::imageCallback(const sensor_msgs::Image::ConstPtr& msg)
@@ -208,6 +240,28 @@ void ArUcoDetectionManager::processImage()
             {
                 cv::aruco::drawAxis(output_image, camera_matrix, distortion_coeffs,
                                   rvecs[i], tvecs[i], marker_size * 0.5);
+            }
+
+            // 加上這些行來顯示圖片
+            std::string filename = "aruco_detection_" + std::to_string(ros::Time::now().toSec()) + ".jpg";
+            cv::imwrite(filename, output_image);
+            ROS_INFO("Saved detection result to: %s", filename.c_str());
+            
+
+            // 8. 估計箱子中心點
+            std::vector<cv::Vec3d> box_estimates = ArUcoBoxConfig::getAllBoxCenterEstimates(
+                marker_ids, tvecs, rvecs, box_config_type_);
+
+            if(box_estimates.size() != marker_ids.size()) {
+                ROS_WARN("Size match error, box_estimates.size: %zu, marker_ids.size: %zu",
+                box_estimates.size(), marker_ids.size());
+            } else {
+
+                for(int i=0; i < box_estimates.size(); ++i){
+                    const auto& box = box_estimates[i];
+                    ROS_INFO("Box estimation from marker id (%d): (%.4f, %.4f, %.4f)",
+                        marker_ids[i], box[0], box[1], box[2]);
+                }
             }
             
             ROS_INFO("ArUco detection completed successfully!");

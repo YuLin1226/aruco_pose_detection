@@ -11,7 +11,7 @@
 #include <tf2_ros/buffer.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <geometry_msgs/PoseStamped.h>
-
+#include "aruco_box_config.h"
 
 
 class ArUcoDetectionManager
@@ -47,6 +47,14 @@ private:
     // TF 相關成員
     tf2_ros::Buffer tf_buffer_;
     tf2_ros::TransformListener tf_listener_;
+
+    // Case
+    ArUcoBoxConfig::BoxConfigType box_config_type_;
+
+    /**
+     * @brief 紀錄當前 ArUco Case
+     */
+    void initArUcoCaseType();
 
 
     /**
