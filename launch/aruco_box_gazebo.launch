@@ -1,130 +1,177 @@
 <?xml version="1.0"?>
 <launch>
-  
-  <!-- Arguments -->
-  <arg name="marker_case" default="case3" 
-       doc="ArUco marker case: case1, case2a, case2b, case3, case4, case5"/>
-  <arg name="gui" default="true"/>
-  <arg name="paused" default="false"/>
-  <arg name="use_sim_time" default="true"/>
-  <arg name="world_name" default="$(find aruco_pose_detection)/worlds/aruco_box.world"/>
-  
-  <!-- Spawn position for ArUco box -->
-  <arg name="aruco_x" default="0.0"/>
-  <arg name="aruco_y" default="0.0"/>
-  <arg name="aruco_z" default="0.0"/>
+    <!-- Arguments -->
+    <arg name="marker_case" default="case3" 
+        doc="ArUco marker case: case1, case2a, case2b, case3, case4, case5"/>
+    <arg name="gui" default="true"/>
+    <arg name="paused" default="false"/>
+    <arg name="use_sim_time" default="true"/>
+    <arg name="world_name" default="$(find aruco_pose_detection)/worlds/aruco_box.world"/>
+    
+    <!-- Spawn position for ArUco box -->
+    <arg name="aruco_x" default="0.0"/>
+    <arg name="aruco_y" default="0.0"/>
+    <arg name="aruco_z" default="0.0"/>
 
-  <!-- Spawn position for Obstacle box -->
-  <arg name="obs1_x" default="0.0"/>
-  <arg name="obs1_y" default="1.0"/>
-  <arg name="obs1_z" default="0.0"/>
-  <arg name="obs2_x" default="0.0"/>
-  <arg name="obs2_y" default="-1.0"/>
-  <arg name="obs2_z" default="0.0"/>
+    <!-- Spawn position for Obstacle box -->
+    <arg name="obs1_x" default="0.0"/>
+    <arg name="obs1_y" default="1.0"/>
+    <arg name="obs1_z" default="0.0"/>
+    <arg name="obs2_x" default="0.0"/>
+    <arg name="obs2_y" default="-1.0"/>
+    <arg name="obs2_z" default="0.0"/>
   
-  <!-- Spawn position for camera robot -->
-  <arg name="camera_x" default="2.0"/>
-  <arg name="camera_y" default="1.0"/>
-  <arg name="camera_z" default="0.5"/>
-  <!-- <arg name="camera_yaw" default="3.1415926"/> -->
-  <arg name="camera_yaw" default="3.7415926"/>
-  
-  
-  <!-- Set use_sim_time -->
-  <param name="/use_sim_time" value="$(arg use_sim_time)"/>
-  
-  <!-- Set Gazebo resource paths -->
-  <!-- <env name="GAZEBO_RESOURCE_PATH" value="$(find aruco_pose_detection):$(optenv GAZEBO_RESOURCE_PATH)"/> -->
-  <!-- <env name="GAZEBO_MODEL_PATH" value="$(find aruco_pose_detection):$(optenv GAZEBO_MODEL_PATH)"/> -->
-  <!-- 在 launch 檔案中加入這行 -->
-<!-- <env name="GAZEBO_RESOURCE_PATH" value="/usr/share/gazebo-11:$(find aruco_pose_detection):$(optenv GAZEBO_RESOURCE_PATH)"/> -->
-  
-  <!-- Start Gazebo -->
-  <include file="$(find gazebo_ros)/launch/empty_world.launch">
-    <arg name="world_name" value="$(arg world_name)"/>
-    <arg name="paused" value="$(arg paused)"/>
-    <arg name="use_sim_time" value="$(arg use_sim_time)"/>
-    <arg name="gui" value="$(arg gui)"/>
-  </include>
-  
-  <!-- Load ArUco box robot description based on marker case -->
-  <group if="$(eval arg('marker_case') == 'case1')">
-    <param name="aruco_robot_description" 
-           command="$(find xacro)/xacro $(find aruco_pose_detection)/urdf/aruco_box_parametric.urdf.xacro 
-                    aruco_material:=ArUco/Case1Single"/>
-    <param name="aruco_detection_case" type="string" value="case1" />
-  </group>
-  
-  <group if="$(eval arg('marker_case') == 'case2a')">
-    <param name="aruco_robot_description" 
-           command="$(find xacro)/xacro $(find aruco_pose_detection)/urdf/aruco_box_parametric.urdf.xacro 
-                    aruco_material:=ArUco/Case2aHorizontal"/>
-    <param name="aruco_detection_case" type="string" value="case2a" />
-  </group>
-  
-  <group if="$(eval arg('marker_case') == 'case2b')">
-    <param name="aruco_robot_description" 
-           command="$(find xacro)/xacro $(find aruco_pose_detection)/urdf/aruco_box_parametric.urdf.xacro 
-                    aruco_material:=ArUco/Case2bDiagonal"/>
-    <param name="aruco_detection_case" type="string" value="case2b" />
-  </group>
-  
-  <group if="$(eval arg('marker_case') == 'case3')">
-    <param name="aruco_robot_description" 
-           command="$(find xacro)/xacro $(find aruco_pose_detection)/urdf/aruco_box_parametric.urdf.xacro 
-                    aruco_material:=ArUco/Case3Quad"/>
-    <param name="aruco_detection_case" type="string" value="case3" />
-  </group>
-  
-  <group if="$(eval arg('marker_case') == 'case4')">
-    <param name="aruco_robot_description" 
-           command="$(find xacro)/xacro $(find aruco_pose_detection)/urdf/aruco_box_parametric.urdf.xacro 
-                    aruco_material:=ArUco/Case4TwoRows"/>
-    <param name="aruco_detection_case" type="string" value="case4" />
-  </group>
-  
-  <group if="$(eval arg('marker_case') == 'case5')">
-    <param name="aruco_robot_description" 
-           command="$(find xacro)/xacro $(find aruco_pose_detection)/urdf/aruco_box_parametric.urdf.xacro 
-                    aruco_material:=ArUco/Case5NineGrid"/>
-    <param name="aruco_detection_case" type="string" value="case5" />
-  </group>
-  
-  <!-- Load camera robot description -->
-  <param name="camera_robot_description" 
-         command="$(find xacro)/xacro $(find aruco_pose_detection)/urdf/camera_robot.urdf.xacro 
-                  camera_x:=$(arg camera_x) camera_y:=$(arg camera_y) camera_height:=$(arg camera_z)"/>
-  
-  <!-- Spawn the ArUco box -->
-  <node name="spawn_aruco_box" pkg="gazebo_ros" type="spawn_model" output="screen"
-        args="-urdf -model aruco_box -param aruco_robot_description 
-              -x $(arg aruco_x) -y $(arg aruco_y) -z $(arg aruco_z)"/>
-  
-  <!-- Spawn the obstacle boxes -->
-  <param name="obstacle_description" 
-           command="$(find xacro)/xacro $(find aruco_pose_detection)/urdf/obstacle_box.urdf.xacro"/>
-  <node name="spawn_obstacle_box_1" pkg="gazebo_ros" type="spawn_model" output="screen"
-        args="-urdf -model obstacle_box_1 -param obstacle_description 
-              -x $(arg obs1_x) -y $(arg obs1_y) -z $(arg obs1_z)"/>
-  <node name="spawn_obstacle_box_2" pkg="gazebo_ros" type="spawn_model" output="screen"
-        args="-urdf -model obstacle_box_2 -param obstacle_description 
-              -x $(arg obs2_x) -y $(arg obs2_y) -z $(arg obs2_z)"/>
 
-  <!-- Spawn the camera robot -->
-  <node name="spawn_camera_robot" pkg="gazebo_ros" type="spawn_model" output="screen"
-        args="-urdf -model camera_robot -param camera_robot_description 
-              -x $(arg camera_x) -y $(arg camera_y) -z $(arg camera_z) -Y $(arg camera_yaw)"/>
+    
+<!-- Camera position control parameters -->
+<arg name="camera_distance" default="5" doc="Camera distance from origin: 2, 5, or 10 meters"/>
+<arg name="camera_angle" default="3" doc="Camera angle: 0=0deg, 1=15deg, 2=30deg, 3=45deg"/>
+
+<!-- Fixed camera height -->
+<arg name="camera_z" default="0.5"/>
+
+<!-- Distance 2m configurations -->
+<arg name="camera_x" if="$(eval arg('camera_distance') == 2 and arg('camera_angle') == 0)" value="2.0"/>
+<arg name="camera_y" if="$(eval arg('camera_distance') == 2 and arg('camera_angle') == 0)" value="0.0"/>
+<arg name="camera_yaw" if="$(eval arg('camera_distance') == 2 and arg('camera_angle') == 0)" value="3.1415926"/>
+
+<arg name="camera_x" if="$(eval arg('camera_distance') == 2 and arg('camera_angle') == 1)" value="1.932"/>
+<arg name="camera_y" if="$(eval arg('camera_distance') == 2 and arg('camera_angle') == 1)" value="0.518"/>
+<arg name="camera_yaw" if="$(eval arg('camera_distance') == 2 and arg('camera_angle') == 1)" value="-2.8798"/>
+
+<arg name="camera_x" if="$(eval arg('camera_distance') == 2 and arg('camera_angle') == 2)" value="1.732"/>
+<arg name="camera_y" if="$(eval arg('camera_distance') == 2 and arg('camera_angle') == 2)" value="1.0"/>
+<arg name="camera_yaw" if="$(eval arg('camera_distance') == 2 and arg('camera_angle') == 2)" value="-2.6179"/>
+
+<arg name="camera_x" if="$(eval arg('camera_distance') == 2 and arg('camera_angle') == 3)" value="1.414"/>
+<arg name="camera_y" if="$(eval arg('camera_distance') == 2 and arg('camera_angle') == 3)" value="1.414"/>
+<arg name="camera_yaw" if="$(eval arg('camera_distance') == 2 and arg('camera_angle') == 3)" value="-2.3562"/>
+
+<!-- Distance 5m configurations -->
+<arg name="camera_x" if="$(eval arg('camera_distance') == 5 and arg('camera_angle') == 0)" value="5.0"/>
+<arg name="camera_y" if="$(eval arg('camera_distance') == 5 and arg('camera_angle') == 0)" value="0.0"/>
+<arg name="camera_yaw" if="$(eval arg('camera_distance') == 5 and arg('camera_angle') == 0)" value="3.1415926"/>
+
+<arg name="camera_x" if="$(eval arg('camera_distance') == 5 and arg('camera_angle') == 1)" value="4.830"/>
+<arg name="camera_y" if="$(eval arg('camera_distance') == 5 and arg('camera_angle') == 1)" value="1.294"/>
+<arg name="camera_yaw" if="$(eval arg('camera_distance') == 5 and arg('camera_angle') == 1)" value="-2.8798"/>
+
+<arg name="camera_x" if="$(eval arg('camera_distance') == 5 and arg('camera_angle') == 2)" value="4.330"/>
+<arg name="camera_y" if="$(eval arg('camera_distance') == 5 and arg('camera_angle') == 2)" value="2.5"/>
+<arg name="camera_yaw" if="$(eval arg('camera_distance') == 5 and arg('camera_angle') == 2)" value="-2.6179"/>
+
+<arg name="camera_x" if="$(eval arg('camera_distance') == 5 and arg('camera_angle') == 3)" value="3.536"/>
+<arg name="camera_y" if="$(eval arg('camera_distance') == 5 and arg('camera_angle') == 3)" value="3.536"/>
+<arg name="camera_yaw" if="$(eval arg('camera_distance') == 5 and arg('camera_angle') == 3)" value="-2.3562"/>
+
+<!-- Distance 10m configurations -->
+<arg name="camera_x" if="$(eval arg('camera_distance') == 10 and arg('camera_angle') == 0)" value="10.0"/>
+<arg name="camera_y" if="$(eval arg('camera_distance') == 10 and arg('camera_angle') == 0)" value="0.0"/>
+<arg name="camera_yaw" if="$(eval arg('camera_distance') == 10 and arg('camera_angle') == 0)" value="3.1415926"/>
+
+<arg name="camera_x" if="$(eval arg('camera_distance') == 10 and arg('camera_angle') == 1)" value="9.659"/>
+<arg name="camera_y" if="$(eval arg('camera_distance') == 10 and arg('camera_angle') == 1)" value="2.588"/>
+<arg name="camera_yaw" if="$(eval arg('camera_distance') == 10 and arg('camera_angle') == 1)" value="-2.8798"/>
+
+<arg name="camera_x" if="$(eval arg('camera_distance') == 10 and arg('camera_angle') == 2)" value="8.660"/>
+<arg name="camera_y" if="$(eval arg('camera_distance') == 10 and arg('camera_angle') == 2)" value="5.0"/>
+<arg name="camera_yaw" if="$(eval arg('camera_distance') == 10 and arg('camera_angle') == 2)" value="-2.6179"/>
+
+<arg name="camera_x" if="$(eval arg('camera_distance') == 10 and arg('camera_angle') == 3)" value="7.071"/>
+<arg name="camera_y" if="$(eval arg('camera_distance') == 10 and arg('camera_angle') == 3)" value="7.071"/>
+<arg name="camera_yaw" if="$(eval arg('camera_distance') == 10 and arg('camera_angle') == 3)" value="-2.3562"/>
+
   
-  <!-- Robot state publisher for ArUco box -->
-  <node name="aruco_robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher">
-    <remap from="robot_description" to="aruco_robot_description"/>
-    <remap from="joint_states" to="aruco_joint_states"/>
-  </node>
   
-  <!-- Robot state publisher for camera robot -->
-  <node name="camera_robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher">
-    <remap from="robot_description" to="camera_robot_description"/>
-    <remap from="joint_states" to="camera_joint_states"/>
-  </node>
+    <!-- Set use_sim_time -->
+    <param name="/use_sim_time" value="$(arg use_sim_time)"/>
+    
+    <!-- Start Gazebo -->
+    <include file="$(find gazebo_ros)/launch/empty_world.launch">
+        <arg name="world_name" value="$(arg world_name)"/>
+        <arg name="paused" value="$(arg paused)"/>
+        <arg name="use_sim_time" value="$(arg use_sim_time)"/>
+        <arg name="gui" value="$(arg gui)"/>
+    </include>
+  
+    <!-- Load ArUco box robot description based on marker case -->
+    <group if="$(eval arg('marker_case') == 'case1')">
+        <param name="aruco_robot_description" 
+            command="$(find xacro)/xacro $(find aruco_pose_detection)/urdf/aruco_box_parametric.urdf.xacro 
+                        aruco_material:=ArUco/Case1Single"/>
+        <param name="aruco_detection_case" type="string" value="case1" />
+    </group>
+    
+    <group if="$(eval arg('marker_case') == 'case2a')">
+        <param name="aruco_robot_description" 
+            command="$(find xacro)/xacro $(find aruco_pose_detection)/urdf/aruco_box_parametric.urdf.xacro 
+                        aruco_material:=ArUco/Case2aHorizontal"/>
+        <param name="aruco_detection_case" type="string" value="case2a" />
+    </group>
+    
+    <group if="$(eval arg('marker_case') == 'case2b')">
+        <param name="aruco_robot_description" 
+            command="$(find xacro)/xacro $(find aruco_pose_detection)/urdf/aruco_box_parametric.urdf.xacro 
+                        aruco_material:=ArUco/Case2bDiagonal"/>
+        <param name="aruco_detection_case" type="string" value="case2b" />
+    </group>
+    
+    <group if="$(eval arg('marker_case') == 'case3')">
+        <param name="aruco_robot_description" 
+            command="$(find xacro)/xacro $(find aruco_pose_detection)/urdf/aruco_box_parametric.urdf.xacro 
+                        aruco_material:=ArUco/Case3Quad"/>
+        <param name="aruco_detection_case" type="string" value="case3" />
+    </group>
+    
+    <group if="$(eval arg('marker_case') == 'case4')">
+        <param name="aruco_robot_description" 
+            command="$(find xacro)/xacro $(find aruco_pose_detection)/urdf/aruco_box_parametric.urdf.xacro 
+                        aruco_material:=ArUco/Case4TwoRows"/>
+        <param name="aruco_detection_case" type="string" value="case4" />
+    </group>
+    
+    <group if="$(eval arg('marker_case') == 'case5')">
+        <param name="aruco_robot_description" 
+            command="$(find xacro)/xacro $(find aruco_pose_detection)/urdf/aruco_box_parametric.urdf.xacro 
+                        aruco_material:=ArUco/Case5NineGrid"/>
+        <param name="aruco_detection_case" type="string" value="case5" />
+    </group>
+    
+    <!-- Load camera robot description -->
+    <param name="camera_robot_description" 
+            command="$(find xacro)/xacro $(find aruco_pose_detection)/urdf/camera_robot.urdf.xacro 
+                    camera_x:=$(arg camera_x) camera_y:=$(arg camera_y) camera_height:=$(arg camera_z)"/>
+    
+    <!-- Spawn the ArUco box -->
+    <node name="spawn_aruco_box" pkg="gazebo_ros" type="spawn_model" output="screen"
+            args="-urdf -model aruco_box -param aruco_robot_description 
+                -x $(arg aruco_x) -y $(arg aruco_y) -z $(arg aruco_z)"/>
+    
+    <!-- Spawn the obstacle boxes -->
+    <param name="obstacle_description" 
+            command="$(find xacro)/xacro $(find aruco_pose_detection)/urdf/obstacle_box.urdf.xacro"/>
+    <node name="spawn_obstacle_box_1" pkg="gazebo_ros" type="spawn_model" output="screen"
+            args="-urdf -model obstacle_box_1 -param obstacle_description 
+                -x $(arg obs1_x) -y $(arg obs1_y) -z $(arg obs1_z)"/>
+    <node name="spawn_obstacle_box_2" pkg="gazebo_ros" type="spawn_model" output="screen"
+            args="-urdf -model obstacle_box_2 -param obstacle_description 
+                -x $(arg obs2_x) -y $(arg obs2_y) -z $(arg obs2_z)"/>
+
+    <!-- Spawn the camera robot -->
+    <node name="spawn_camera_robot" pkg="gazebo_ros" type="spawn_model" output="screen"
+            args="-urdf -model camera_robot -param camera_robot_description 
+                -x $(arg camera_x) -y $(arg camera_y) -z $(arg camera_z) -Y $(arg camera_yaw)"/>
+    
+    <!-- Robot state publisher for ArUco box -->
+    <node name="aruco_robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher">
+        <remap from="robot_description" to="aruco_robot_description"/>
+        <remap from="joint_states" to="aruco_joint_states"/>
+    </node>
+    
+    <!-- Robot state publisher for camera robot -->
+    <node name="camera_robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher">
+        <remap from="robot_description" to="camera_robot_description"/>
+        <remap from="joint_states" to="camera_joint_states"/>
+    </node>
 
 </launch>
