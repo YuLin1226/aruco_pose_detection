@@ -35,11 +35,9 @@ void ArUcoDetectionManager::initArUcoCaseType()
     std::string test_case;
     nh_.getParam("/aruco_detection_case", test_case);
     if (test_case.empty()) {
-        test_case = "case1";  // 預設值
+        test_case = "unknown";  // 預設值
     }
-
     ROS_INFO("Current TEST CASE: %s", test_case.c_str());
-
     if (test_case == "case1") {
         box_config_type_ = ArUcoBoxConfig::BoxConfigType::CASE_1;
     } else if (test_case == "case2a") {
@@ -56,6 +54,15 @@ void ArUcoDetectionManager::initArUcoCaseType()
         ROS_WARN("Unknown test case: %s, using default case1", test_case.c_str());
         box_config_type_ = ArUcoBoxConfig::BoxConfigType::CASE_1;
     }
+
+    nh_.getParam("/total_image_pixels", total_image_pixels_);
+    nh_.getParam("/total_image_meters", total_image_meters_);
+    nh_.getParam("/marker_pixels", marker_pixels_);
+
+    ROS_INFO("TOTAL IMAGE PIXEL: %d", total_image_pixels_);
+    ROS_INFO("TOTAL IMAGE METER: %f", total_image_meters_);
+    ROS_INFO("MARKER PIXEL: %d", marker_pixels_);
+
 }
 
 void ArUcoDetectionManager::imageCallback(const sensor_msgs::Image::ConstPtr& msg)
@@ -180,13 +187,7 @@ void ArUcoDetectionManager::processImage()
             }
             
             // 4. ArUco 標記實際尺寸計算
-            // 根據生成程式: 總圖片 1084x1084 像素對應 1x1 米
-            // 單個標記 512x512 像素
-            float total_image_pixels = 1084.0f;  // 總圖片像素
-            float total_image_meters = 1.0f;     // 總圖片實際尺寸 (米)
-            float marker_pixels = 512.0f;       // 單個標記像素
-            
-            float marker_size = (marker_pixels / total_image_pixels) * total_image_meters;
+            double marker_size = ((double)marker_pixels_ / (double)total_image_pixels_) * total_image_meters_;
             // = (512 / 1084) * 1.0 = 0.4723 米
             
             ROS_INFO("Calculated marker size: %.4f meters (%.2f cm)", 
@@ -229,6 +230,10 @@ void ArUcoDetectionManager::processImage()
                 {
                     ROS_WARN("  Failed to transform pose to cam_base_link frame");
                 }
+                    
+                // 權重計算
+                double weight = calculateWeight(marker_ids[i], tvecs[i], rvecs[i]);
+                ROS_INFO("  Weight: %.4f", weight);
             }
             
             // 7. 可選：繪製檢測結果
@@ -242,13 +247,13 @@ void ArUcoDetectionManager::processImage()
                                   rvecs[i], tvecs[i], marker_size * 0.5);
             }
 
-            // 加上這些行來顯示圖片
+            // 儲存檢測結果圖片
             std::string filename = "aruco_detection_" + std::to_string(ros::Time::now().toSec()) + ".jpg";
             cv::imwrite(filename, output_image);
             ROS_INFO("Saved detection result to: %s", filename.c_str());
             
 
-            // 8. 估計箱子中心點
+            // 8. 估計個別箱子中心點
             std::vector<cv::Vec3d> box_estimates = ArUcoBoxConfig::getAllBoxCenterEstimates(
                 marker_ids, tvecs, rvecs, box_config_type_);
 
@@ -256,12 +261,34 @@ void ArUcoDetectionManager::processImage()
                 ROS_WARN("Size match error, box_estimates.size: %zu, marker_ids.size: %zu",
                 box_estimates.size(), marker_ids.size());
             } else {
-
+                ROS_INFO("Individual box center estimates (optical frame):");
                 for(int i=0; i < box_estimates.size(); ++i){
                     const auto& box = box_estimates[i];
-                    ROS_INFO("Box estimation from marker id (%d): (%.4f, %.4f, %.4f)",
+                    ROS_INFO("  Marker ID %d: (%.4f, %.4f, %.4f)",
                         marker_ids[i], box[0], box[1], box[2]);
                 }
+            }
+
+            // 9. 新增：箱子姿態融合
+            if (marker_ids.size() > 0) {
+                BoxPose6D fused_pose = fuseBoxPosesOpticalFrame(marker_ids, tvecs, rvecs);
+                
+                ROS_INFO("=== FUSED BOX POSE (optical frame) ===");
+                ROS_INFO("Position: (%.4f, %.4f, %.4f)", 
+                         fused_pose.position[0], fused_pose.position[1], fused_pose.position[2]);
+                ROS_INFO("Quaternion (w,x,y,z): (%.4f, %.4f, %.4f, %.4f)", 
+                         fused_pose.orientation_quat[0], fused_pose.orientation_quat[1], 
+                         fused_pose.orientation_quat[2], fused_pose.orientation_quat[3]);
+                
+                // 轉換為歐拉角便於理解
+                tf2::Quaternion tf_quat(fused_pose.orientation_quat[1], fused_pose.orientation_quat[2], 
+                                       fused_pose.orientation_quat[3], fused_pose.orientation_quat[0]);
+                tf2::Matrix3x3 m(tf_quat);
+                double roll, pitch, yaw;
+                m.getRPY(roll, pitch, yaw);
+                ROS_INFO("Euler angles (r,p,y): (%.4f, %.4f, %.4f) rad", roll, pitch, yaw);
+                ROS_INFO("Euler angles (r,p,y): (%.2f, %.2f, %.2f) deg", 
+                         roll*180.0/M_PI, pitch*180.0/M_PI, yaw*180.0/M_PI);
             }
             
             ROS_INFO("ArUco detection completed successfully!");
@@ -345,4 +372,117 @@ bool ArUcoDetectionManager::transformPose(const cv::Vec3d& rvec, const cv::Vec3d
         ROS_ERROR("Error transforming pose: %s", e.what());
         return false;
     }
+}
+
+double ArUcoDetectionManager::calculateWeight(int marker_id, const cv::Vec3d& tvec, const cv::Vec3d& rvec)
+{
+    // 1. 距離因子 (距離越近權重越高)
+    double distance = cv::norm(tvec);
+    double alpha_distance = 0.1;  // 可調參數
+    double w_distance = 1.0 / (1.0 + alpha_distance * distance * distance);
+    
+    // 2. 視角因子 (正對 marker 比側面觀看更準確)
+    // marker 的 Z 軸 (法向量) 在相機座標系中的方向
+    cv::Mat R_marker;
+    cv::Rodrigues(rvec, R_marker);
+    
+    // marker 的法向量 (Z軸方向，指向相機) 在相機座標系中的方向
+    cv::Mat marker_normal = R_marker * (cv::Mat_<double>(3,1) << 0, 0, 1);
+    
+    // 相機到 marker 的視線方向 (正規化)
+    cv::Vec3d view_direction = tvec / cv::norm(tvec);
+    cv::Mat view_dir_mat = (cv::Mat_<double>(3,1) << view_direction[0], view_direction[1], view_direction[2]);
+    
+    // 計算視角 (法向量與視線方向的夾角)
+    double dot_product = marker_normal.dot(-view_dir_mat);  // 負號因為是相反方向
+    dot_product = std::max(-1.0, std::min(1.0, dot_product));  // 限制在 [-1,1] 避免數值錯誤
+    double viewing_angle = acos(dot_product);
+    
+    double w_angle = cos(viewing_angle) * cos(viewing_angle);
+    
+    // 3. 綜合權重
+    double total_weight = w_distance * w_angle;
+    
+    // Debug 輸出
+    ROS_DEBUG("Marker ID %d: distance=%.3fm, viewing_angle=%.2f°, w_distance=%.3f, w_angle=%.3f, total_weight=%.4f",
+              marker_id, distance, viewing_angle * 180.0 / M_PI, w_distance, w_angle, total_weight);
+    
+    return total_weight;
+}
+
+// 四元數加權平均
+cv::Vec4d ArUcoDetectionManager::fuseQuaternions(const std::vector<cv::Vec4d>& quaternions,
+                                                const std::vector<double>& weights)
+{
+    cv::Vec4d weighted_sum(0, 0, 0, 0);
+    double total_weight = 0.0;
+    
+    for (size_t i = 0; i < quaternions.size(); ++i) {
+        weighted_sum += quaternions[i] * weights[i];
+        total_weight += weights[i];
+    }
+    
+    cv::Vec4d result = weighted_sum / total_weight;
+    
+    // 正規化
+    double norm = cv::norm(result);
+    return result / norm;
+}
+
+// 箱子姿態融合函數
+BoxPose6D ArUcoDetectionManager::fuseBoxPosesOpticalFrame(const std::vector<int>& marker_ids,
+                                                         const std::vector<cv::Vec3d>& tvecs,
+                                                         const std::vector<cv::Vec3d>& rvecs)
+{
+    BoxPose6D result;
+    
+    // 1. 獲取箱子中心位置估計 (optical frame)
+    std::vector<cv::Vec3d> box_estimates = ArUcoBoxConfig::getAllBoxCenterEstimates(
+        marker_ids, tvecs, rvecs, box_config_type_);
+    
+    // 2. 計算權重
+    std::vector<double> weights;
+    for (size_t i = 0; i < marker_ids.size(); ++i) {
+        double weight = calculateWeight(marker_ids[i], tvecs[i], rvecs[i]);
+        weights.push_back(weight);
+    }
+    
+    // 3. 位置加權平均
+    cv::Vec3d weighted_pos_sum(0, 0, 0);
+    double total_weight = 0.0;
+    
+    for (size_t i = 0; i < box_estimates.size(); ++i) {
+        weighted_pos_sum += box_estimates[i] * weights[i];
+        total_weight += weights[i];
+    }
+    result.position = weighted_pos_sum / total_weight;
+    
+    // 4. 旋轉加權平均 (假設箱子的旋轉 = marker 的旋轉)
+    std::vector<cv::Vec4d> quaternions;
+    for (size_t i = 0; i < rvecs.size(); ++i) {
+        cv::Mat R;
+        cv::Rodrigues(rvecs[i], R);
+        
+        // 轉換為四元數 [w, x, y, z]
+        tf2::Matrix3x3 tf_rotation(
+            R.at<double>(0,0), R.at<double>(0,1), R.at<double>(0,2),
+            R.at<double>(1,0), R.at<double>(1,1), R.at<double>(1,2),
+            R.at<double>(2,0), R.at<double>(2,1), R.at<double>(2,2)
+        );
+        
+        tf2::Quaternion tf_quat;
+        tf_rotation.getRotation(tf_quat);
+        
+        quaternions.push_back(cv::Vec4d(tf_quat.w(), tf_quat.x(), tf_quat.y(), tf_quat.z()));
+    }
+    
+    result.orientation_quat = fuseQuaternions(quaternions, weights);
+    
+    // 輸出權重資訊
+    ROS_INFO("Box pose fusion weights:");
+    for (size_t i = 0; i < marker_ids.size(); ++i) {
+        ROS_INFO("  Marker ID %d: weight = %.4f", marker_ids[i], weights[i]);
+    }
+    
+    return result;
 }

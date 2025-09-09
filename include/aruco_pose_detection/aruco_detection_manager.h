@@ -14,6 +14,12 @@
 #include "aruco_box_config.h"
 
 
+
+struct BoxPose6D {
+    cv::Vec3d position;
+    cv::Vec4d orientation_quat;  // [w, x, y, z]
+};
+
 class ArUcoDetectionManager
 {
 public:
@@ -47,6 +53,11 @@ private:
     // TF 相關成員
     tf2_ros::Buffer tf_buffer_;
     tf2_ros::TransformListener tf_listener_;
+
+    // ArUco Parameters
+    int total_image_pixels_;        // 總圖片像素
+    double total_image_meters_;     // 總圖片實際尺寸 (米)
+    int marker_pixels_;             // 單個標記像素
 
     // Case
     ArUcoBoxConfig::BoxConfigType box_config_type_;
@@ -95,6 +106,17 @@ private:
      */
     bool transformPose(const cv::Vec3d& rvec, const cv::Vec3d& tvec, 
                       geometry_msgs::PoseStamped& transformed_pose);
+
+    /**
+     * @brief 計算 marker 的權重，用於後續 Kalman Filter
+     */
+    double calculateWeight(int marker_id, const cv::Vec3d& tvec, const cv::Vec3d& rvec);
+
+    BoxPose6D fuseBoxPosesOpticalFrame(const std::vector<int>& marker_ids,
+                                  const std::vector<cv::Vec3d>& tvecs,
+                                  const std::vector<cv::Vec3d>& rvecs);
+    cv::Vec4d fuseQuaternions(const std::vector<cv::Vec4d>& quaternions,
+                         const std::vector<double>& weights);
 };
 
 #endif // ARUCO_DETECTION_MANAGER_H

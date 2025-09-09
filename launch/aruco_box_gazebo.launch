@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <launch>
     <!-- Arguments -->
-    <arg name="marker_case" default="case3" 
+    <arg name="marker_case" default="case5" 
         doc="ArUco marker case: case1, case2a, case2b, case3, case4, case5"/>
     <arg name="gui" default="true"/>
     <arg name="paused" default="false"/>
@@ -24,7 +24,7 @@
 
     
 <!-- Camera position control parameters -->
-<arg name="camera_distance" default="5" doc="Camera distance from origin: 2, 5, or 10 meters"/>
+<arg name="camera_distance" default="10" doc="Camera distance from origin: 2, 5, or 10 meters"/>
 <arg name="camera_angle" default="3" doc="Camera angle: 0=0deg, 1=15deg, 2=30deg, 3=45deg"/>
 
 <!-- Fixed camera height -->
@@ -100,6 +100,9 @@
             command="$(find xacro)/xacro $(find aruco_pose_detection)/urdf/aruco_box_parametric.urdf.xacro 
                         aruco_material:=ArUco/Case1Single"/>
         <param name="aruco_detection_case" type="string" value="case1" />
+        <param name="total_image_pixels" value="552" />
+        <param name="total_image_meters" value="1.0" />
+        <param name="marker_pixels" value="512" />
     </group>
     
     <group if="$(eval arg('marker_case') == 'case2a')">
@@ -107,6 +110,9 @@
             command="$(find xacro)/xacro $(find aruco_pose_detection)/urdf/aruco_box_parametric.urdf.xacro 
                         aruco_material:=ArUco/Case2aHorizontal"/>
         <param name="aruco_detection_case" type="string" value="case2a" />
+        <param name="total_image_pixels" value="1084" />
+        <param name="total_image_meters" value="1.0" />
+        <param name="marker_pixels" value="512" />
     </group>
     
     <group if="$(eval arg('marker_case') == 'case2b')">
@@ -114,6 +120,9 @@
             command="$(find xacro)/xacro $(find aruco_pose_detection)/urdf/aruco_box_parametric.urdf.xacro 
                         aruco_material:=ArUco/Case2bDiagonal"/>
         <param name="aruco_detection_case" type="string" value="case2b" />
+        <param name="total_image_pixels" value="1084" />
+        <param name="total_image_meters" value="1.0" />
+        <param name="marker_pixels" value="512" />
     </group>
     
     <group if="$(eval arg('marker_case') == 'case3')">
@@ -121,6 +130,9 @@
             command="$(find xacro)/xacro $(find aruco_pose_detection)/urdf/aruco_box_parametric.urdf.xacro 
                         aruco_material:=ArUco/Case3Quad"/>
         <param name="aruco_detection_case" type="string" value="case3" />
+        <param name="total_image_pixels" value="1084" />
+        <param name="total_image_meters" value="1.0" />
+        <param name="marker_pixels" value="512" />
     </group>
     
     <group if="$(eval arg('marker_case') == 'case4')">
@@ -128,6 +140,9 @@
             command="$(find xacro)/xacro $(find aruco_pose_detection)/urdf/aruco_box_parametric.urdf.xacro 
                         aruco_material:=ArUco/Case4TwoRows"/>
         <param name="aruco_detection_case" type="string" value="case4" />
+        <param name="total_image_pixels" value="1616" />
+        <param name="total_image_meters" value="1.0" />
+        <param name="marker_pixels" value="512" />
     </group>
     
     <group if="$(eval arg('marker_case') == 'case5')">
@@ -135,6 +150,9 @@
             command="$(find xacro)/xacro $(find aruco_pose_detection)/urdf/aruco_box_parametric.urdf.xacro 
                         aruco_material:=ArUco/Case5NineGrid"/>
         <param name="aruco_detection_case" type="string" value="case5" />
+        <param name="total_image_pixels" value="1616" />
+        <param name="total_image_meters" value="1.0" />
+        <param name="marker_pixels" value="512" />
     </group>
     
     <!-- Load camera robot description -->
